@@ -3,7 +3,7 @@ from PCA9685 import PCA9685
 class Motor:
     def __init__(self):
         self.pwm = PCA9685(0x40, debug=True)
-        self.pwm.setPWMFreq(50)
+        self.pwm.setPWMFreq(150)
     def duty_range(self,duty1,duty2,duty3,duty4):
         if duty1>4095:
             duty1=4095
@@ -78,15 +78,21 @@ class Motor:
             
 PWM=Motor()          
 def loop(): 
-    PWM.setMotorModel(2000,2000,2000,2000)       #Forward
-    time.sleep(3)
-    PWM.setMotorModel(-2000,-2000,-2000,-2000)   #Back
-    time.sleep(3)
-    PWM.setMotorModel(-500,-500,2000,2000)       #Left 
-    time.sleep(3)
-    PWM.setMotorModel(2000,2000,-500,-500)       #Right    
-    time.sleep(3)
-    PWM.setMotorModel(0,0,0,0)                   #Stop
+    PWM.setMotorModel(2000,2000,2000,2000)
+    time.sleep(0.3)
+    PWM.setMotorModel(4000,4000,-2000,-2000)
+    #time.sleep(0.975)
+    time.sleep(1.33)
+    
+    PWM.setMotorModel(0,0,0,0)
+    time.sleep(0.5)
+    return
+    
+    PWM.setMotorModel(-2000,-2000,-300,-300)
+    time.sleep(1)
+    PWM.setMotorModel(-2000,-2000,-2000,-2000)
+    time.sleep(0.3)
+    PWM.setMotorModel(0,0,0,0)
     
 def destroy():
     PWM.setMotorModel(0,0,0,0)                   
