@@ -18,6 +18,8 @@ def _async_raise(tid, exctype):
  
  
 def stop_thread(thread):
+    if not thread:
+        return
     for i in range(5):
         _async_raise(thread.ident, SystemExit)
  

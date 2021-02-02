@@ -25,6 +25,14 @@ class Servo:
         elif channel=='7':
             self.PwmServo.setServoPulse(15,500+int((angle+error)/0.09))
 
+    def setServoPwm2(self,channel,angle,error=0):
+        angle=int(angle)
+        if channel=='0':
+            self.PwmServo.setServoPulse(8,2500-int((angle*4.0+error)/0.36))
+        elif channel=='1':
+            self.PwmServo.setServoPulse(9,500+int((angle*4.0+error)/0.36))
+
+
 # Main program logic follows:
 if __name__ == '__main__':
     print("Now servos will rotate to 90°.") 
