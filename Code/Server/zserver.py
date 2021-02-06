@@ -26,6 +26,9 @@ class Task(object):
         self.err = None
 
     def start(self):
+        if self.is_running():
+            log.info(f"Already running {self.name}")
+            return
         log.info(f"Starting {self.name}")
         name_base = str(
             datetime.now()).replace(':', '-').replace(' ', '.')
@@ -74,9 +77,12 @@ CODE_TO_PROC = {
     1: Task('Dark-Blue', 'sudo python leds-color.py 2 2 15'),
     2: Task('Dark-Green', 'sudo python leds-color.py 7 15 0'),
 
-    # ON 07
-    7:  Task('Ultrasonic-game', 'sudo python ultrasonic-sensor.py'),
-
+    # ON 1121 LG Blue ecodes.KEY_BLUE
+    1121:  Task('Ultrasonic-game', 'sudo python laser.py'),
+    # ON 1137 LG Green ecodes.KEY_GREEN
+    1137:  Task('laser', 'python laser.py'),
+    # ON 1123 LG Yellow ecodes.KEY_YELLOW
+    1123:  Task('car-server', 'sudo python main.py -nt'),
 }
 
 
@@ -98,7 +104,7 @@ async def helper():
             if (event.sec - last_cmd_start_time) < 2:
                 log.info('Skipping too fast command')
                 continue
-            if event.value == 6:  # Turn off
+            if event.value == 1138:  # Turn off LG RED ecodes.KEY_RED
                 last_cmd_start_time = datetime.now().timestamp()
                 turnOffAll()
 

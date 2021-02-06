@@ -1,12 +1,10 @@
 import time
 import RPi.GPIO as GPIO
-from Led import Led
 from threading import Thread
 from Thread import *
 import logging
 from ADC import *
-from servo import Servo
-
+from Led import Led
 
 _log_format = f"%(asctime)s - [%(levelname)s] - %(name)s - (%(filename)s).%(funcName)s(%(lineno)d) - %(message)s"
 logging.basicConfig(level=logging.INFO, format=_log_format)
@@ -21,76 +19,38 @@ class Laser:
         GPIO.setup(self.laser_pin, GPIO.OUT)
 
         # 8000Hz, 4000Hz, 2000Hz, 1600Hz, 1000Hz, 800Hz, 500Hz, 400Hz, 320Hz, 250Hz, 200Hz, 160Hz, 100Hz, 80Hz, 50Hz, 40Hz, 20Hz, and 10Hz.
-        self.pwm = GPIO.PWM(self.laser_pin, 50) # n-Hz        
+        self.pwm = GPIO.PWM(self.laser_pin, 50)  # n-Hz
 
-    def activate_laser(self, active):
-
+    def activate_laser(self, level):
         self.pwm.start(0)
-        self.pwm.ChangeDutyCycle(90) # 0.01 is also visible
-        # time.sleep(20.0)
-        # pwm.ChangeDutyCycle(100.0)
-        #time.sleep(1.0)
-        # pwm.stop()
-        # GPIO.output(self.laser_pin, True)        
-        # GPIO.output(self.laser_pin, False)
-
-
-
-
-laser = Laser()
-led = Led(brightness=20)
-
-
-def ledLoop():
-    try:
-        while True:
-            led.rainbowCycle()
-    except SystemExit:
-        pass
-    except BaseException as e:
-        log.error(f"Exception of type {e.__class__.__name__} e={e}")
+        self.pwm.ChangeDutyCycle(level)  # Level 0.01 is also visible
 
 
 # Main program logic follows:
 if __name__ == '__main__':
     log.info('Program is starting ... ')
 
-    lightThread = None
+    laser = Laser()
     try:
-        last_printed_dist = 0
+        last_printed_light = 0
+        laser.activate_laser(90)
 
-        lightThread = Thread(target=ledLoop)
-        lightThread.start()
-
-        laser.activate_laser(True)
-
-        adc=Adc()
-        
-        pwm=Servo()
-
-        pwm.setServoPwm2('0', 90)
-        time.sleep(2.1)
-        pwm.setServoPwm2('0', 90.5)
-        time.sleep(2.1)
-
-        for n in range(70*2, 110*2, 1):
-            pwm.setServoPwm('0', n/2.0)
-            time.sleep(0.1)
-            pwm.setServoPwm('0', n/2.0)
-            time.sleep(0.1)
-
-        pwm.setServoPwm('0',90)
-        pwm.setServoPwm('1',90)
-
+        adc = Adc()
+        led = Led(brightness=50)
 
         while True:
             value = adc.recvADC(0)
-            print(value)
-            time.sleep(0.5)
+            if abs(value - last_printed_light) > 0.2:
+                print(value)
+                last_printed_light = value
+                time.sleep(0.05)
+            if value > 2.35:
+                led.allColor(155, 5, 5)
+            else:
+                led.allColor(5, 155, 5)
 
     # When 'Ctrl+C' is pressed, the child program destroy() will be  executed.
     except BaseException as e:
         log.error(f"Exception of type {e.__class__.__name__} e={e}")
-        stop_thread(lightThread)
 
     log.info("Bye")
