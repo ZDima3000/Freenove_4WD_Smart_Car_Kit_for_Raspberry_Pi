@@ -4,6 +4,7 @@ from servo import Servo
 from evdev import InputDevice, categorize, ecodes, KeyEvent
 import asyncio
 import RPi.GPIO as GPIO
+from laser import Laser
 
 _log_format = f"%(asctime)s - [%(levelname)s] - %(name)s - (%(filename)s).%(funcName)s(%(lineno)d) - %(message)s"
 logging.basicConfig(level=logging.INFO, format=_log_format)
@@ -18,20 +19,6 @@ LG_CODE_TO_KEY = {
     1025: ecodes.KEY_PAGEDOWN,
 }
 
-class Laser:
-    def __init__(self):
-        GPIO.setwarnings(False)
-        self.laser_pin = 20
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.laser_pin, GPIO.OUT)
-
-        # 8000Hz, 4000Hz, 2000Hz, 1600Hz, 1000Hz, 800Hz, 500Hz, 400Hz, 320Hz, 250Hz, 200Hz, 160Hz, 100Hz, 80Hz, 50Hz, 40Hz, 20Hz, and 10Hz.
-        self.pwm = GPIO.PWM(self.laser_pin, 50)  # n-Hz
-
-    def activate_laser(self, level):
-        self.pwm.start(0)
-        self.pwm.ChangeDutyCycle(level)  # Level 0.01 is also visible
-
 
 # Main program logic follows:
 log.info('Program is starting ... ')
@@ -42,17 +29,6 @@ try:
     angle_1 = 320 # 348 # 320
 
     laser = Laser()
-    laser_value = 0.01
-
-    def get_laser_step():
-        if laser_value < 0.1:
-            return 0.01
-        if laser_value < 7.0:
-            return 0.1
-        if laser_value < 20.0:
-            return 1.0
-        return 10.0
-
 
     def update_angle(angle0, angle1):
         global angle_0
@@ -80,15 +56,12 @@ try:
         #pwm.setServoPwm('1', 90)
 
     def update_laser(value):
-        global laser_value
         if value <= 0.001:
-            laser_value = 0.001
+            value = 0.001
         elif value >= 0.001:
-            laser_value = 100.0
-        else:
-            laser_value = value
-        log.info(f'Set value={laser_value}')
-        laser.activate_laser(laser_value)
+            value = 100.0
+        log.info(f'Set value={value}')
+        laser.activate_laser(value)
 
     def apply_key(key_code):
         if key_code == ecodes.KEY_UP:
@@ -100,9 +73,9 @@ try:
         elif key_code == ecodes.KEY_DOWN:
             update_angle(angle_0, angle_1 - 2)
         elif key_code == ecodes.KEY_PAGEUP:
-            update_laser(laser_value + get_laser_step())
+            update_laser(laser.level + laser.get_laser_step())
         elif key_code == ecodes.KEY_PAGEDOWN:
-            update_laser(laser_value - get_laser_step())
+            update_laser(laser.level - laser.get_laser_step())
 
     async def helper():
         dev = InputDevice('/dev/input/event0')
@@ -123,7 +96,7 @@ try:
                     apply_key(LG_CODE_TO_KEY[event.value])
 
     update_angle(angle_0, angle_1)
-    update_laser(laser_value)
+    update_laser(0.01)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(helper())
 
